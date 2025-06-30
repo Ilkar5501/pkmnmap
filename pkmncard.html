@@ -645,6 +645,38 @@
       border-radius: 10px;
       border: 2px solid #555;
       z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    
+    .audio-controls.minimized {
+      width: 50px;
+      height: 50px;
+      padding: 5px;
+    }
+    
+    .audio-controls.minimized .audio-content {
+      display: none;
+    }
+    
+    .minimize-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #666;
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .minimize-btn:hover {
+      background: #888;
     }
     
     .audio-button {
@@ -772,10 +804,10 @@
         <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
           <table style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr style="background: #f0f0f0;">
+              <tr style="background: #f0f0f0; color: black;">
                 <th style="padding: 8px; border: 1px solid #ccc;">Pokemon</th>
                 <th style="padding: 8px; border: 1px solid #ccc;">Type(s)</th>
-                <th style="padding: 8px; border: 1px solid #ccc;">Action</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">Obtain</th>
               </tr>
             </thead>
             <tbody id="pokemon-shop-list">
@@ -2373,7 +2405,7 @@
         
         <div style="margin-top: 15px; text-align: center;">
           <button class="button danger" onclick="removePokemon('${pokemonName}')" style="padding: 8px 12px; font-size: 12px;">
-            Remove from Bag
+            Remove from Team
           </button>
         </div>
       `;
@@ -2559,9 +2591,27 @@
           collectedPokemon.push(pokemonName);
         }
         
+        // Auto-add to team if less than 6
+        if (currentTeam.length < 6) {
+          currentTeam.push({
+            name: pokemonName,
+            hp: pokemonStats[pokemonName][0],
+            maxHp: pokemonStats[pokemonName][0],
+            fainted: false
+          });
+          updateStatus(`${pokemonName} purchased for $100 and added to your team!`);
+          
+          // Show auto-select button if team is full
+          if (currentTeam.length === 6) {
+            document.getElementById('auto-team-btn').style.display = 'none';
+            spawnTrainers();
+          }
+        } else {
+          updateStatus(`${pokemonName} purchased for $100!`);
+        }
+        
         updateMoneyDisplay();
         updateDisplay();
-        updateStatus(`${pokemonName} purchased for $100!`);
         
         // Refresh the shop
         populatePokemonShop();
@@ -2680,19 +2730,35 @@
       }
     }
 
+    function toggleAudioControls() {
+      const audioControls = document.getElementById('audio-controls');
+      const minimizeBtn = document.getElementById('minimize-btn');
+      
+      if (audioControls.classList.contains('minimized')) {
+        audioControls.classList.remove('minimized');
+        minimizeBtn.textContent = '−';
+      } else {
+        audioControls.classList.add('minimized');
+        minimizeBtn.textContent = '+';
+      }
+    }
+
     // Initialize game when page loads
     window.onload = initGame;
   </script>
   
   <!-- Audio Controls -->
   <div class="audio-controls" id="audio-controls">
-    <div>
-      <button class="audio-button" id="play-pause-btn" onclick="toggleMusic()">🔊 Play</button>
-      <button class="audio-button" id="stop-btn" onclick="stopMusic()">⏹️ Stop</button>
-    </div>
-    <div class="volume-control">
-      <span style="color: white; font-size: 12px;">Vol:</span>
-      <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="30" onchange="setVolume(this.value)">
+    <button class="minimize-btn" id="minimize-btn" onclick="toggleAudioControls()">−</button>
+    <div class="audio-content" id="audio-content">
+      <div>
+        <button class="audio-button" id="play-pause-btn" onclick="toggleMusic()">🔊 Play</button>
+        <button class="audio-button" id="stop-btn" onclick="stopMusic()">⏹️ Stop</button>
+      </div>
+      <div class="volume-control">
+        <span style="color: white; font-size: 12px;">Vol:</span>
+        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="30" onchange="setVolume(this.value)">
+      </div>
     </div>
   </div>
 
