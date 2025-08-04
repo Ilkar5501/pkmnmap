@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokemon Card Collection Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(45deg, #2c5530, #3e7b3e);
+      color: white;
+      overflow: hidden;
+    }
+    
+    .game-container {
+      display: flex;
+      height: 100vh;
+    }
+    
+    .map-section {
+      flex: 3;
+      position: relative;
+      background: #1a4d1a;
+      border-right: 3px solid #8B4513;
+    }
+    
+    .ui-section {
+      flex: 1;
+      background: #2c2c2c;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .map-container {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      position: relative;
+    }
+    
+    .map-grid {
+      display: grid;
+      grid-template-columns: repeat(50, 16px);
+      grid-template-rows: repeat(50, 16px);
+      gap: 0;
+      padding: 20px;
+      background: #2d5a2d;
+    }
+    
+    .tile {
+      width: 16px;
+      height: 16px;
+      position: relative;
+    }
+    
+    .grass { background: #4CAF50; }
+    .water { background: #2196F3; }
+    .path { background: #8D6E63; }
+    .tree { background: #1B5E20; }
+    
+    .player {
+      background: #FF5722 !important;
+      border: 1px solid #BF360C;
+      border-radius: 50%;
+      z-index: 100;
+    }
+    
+    .trainer {
+      background: #9C27B0 !important;
+      border: 1px solid #4A148C;
+      border-radius: 50%;
+      z-index: 99;
+    }
+    
+    .ui-panel {
+      background: #333;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      border: 2px solid #555;
+    }
+    
+    .button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    
+    .button:hover {
+      background: #45a049;
+      transform: translateY(-1px);
+    }
+    
+    .button.danger {
+      background: #f44336;
+    }
+    
+    .button.danger:hover {
+      background: #da190b;
+    }
+    
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background: #2c2c2c;
+      padding: 30px;
+      border-radius: 15px;
+      border: 3px solid #555;
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+      color: white;
+    }
+    
+    /* Shop Styles */
+    .shop-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #555;
+    }
+    
+    .shop-tab {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      margin-right: 5px;
+      transition: background 0.3s;
+    }
+    
+    .shop-tab:hover {
+      background: #555;
+    }
+    
+    .shop-tab.active {
+      background: #007bff;
+    }
+    
+    .shop-section {
+      margin-top: 20px;
+    }
+    
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .badge-card {
+      background: linear-gradient(135deg, #ffd700, #ffb300);
+      border: 3px solid #ff8f00;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      color: #333;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+    }
+    
+    .badge-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+    }
+    
+    .badge-card.owned {
+      background: linear-gradient(135deg, #4caf50, #45a049);
+      border-color: #2e7d32;
+      color: white;
+    }
+    
+    .badge-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 15px;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .pokemon-card {
+      background: linear-gradient(135deg, #4a90a4, #357a8a);
+      border: 3px solid #2c5aa0;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pokemon-card::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #ffd700, #ffa500, #ffd700, #ffa500);
+      border-radius: 15px;
+      z-index: -1;
+      animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+    
+    .pokemon-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+    }
+    
+    .card-header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    
+    .pokemon-name {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    .pokemon-types {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .type-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    
+    .type-fire { background: #ff6666; }
+    .type-water { background: #6666ff; }
+    .type-grass { background: #66ff66; }
+    .type-electric { background: #ffff66; color: #333; }
+    .type-psychic { background: #ff66ff; }
+    .type-ice { background: #66ffff; color: #333; }
+    .type-dragon { background: #9966ff; }
+    .type-dark { background: #666666; }
+    .type-fighting { background: #cc6666; }
+    .type-poison { background: #cc66cc; }
+    .type-ground { background: #cccc66; color: #333; }
+    .type-flying { background: #9999ff; }
+    .type-bug { background: #99cc66; }
+    .type-rock { background: #cccc99; color: #333; }
+    .type-ghost { background: #9999cc; }
+    .type-steel { background: #b3b3cc; }
+    .type-fairy { background: #ffb3e6; }
+    .type-normal { background: #cccccc; color: #333; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .stat {
+      background: rgba(255,255,255,0.1);
+      padding: 8px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.8;
+      text-transform: uppercase;
+    }
+    
+    .stat-value {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .moves-section {
+      margin-top: 15px;
+    }
+    
+    .moves-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    
+    .move {
+      background: rgba(255,255,255,0.1);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: center;
+    }
+    
+    /* Team Display Styles */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .team-pokemon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #444;
+      border: 2px solid #666;
+      border-radius: 10px;
+      padding: 8px;
+      transition: all 0.2s;
+    }
+    
+    .team-pokemon:hover {
+      border-color: #888;
+      transform: translateY(-2px);
+    }
+    
+    .team-pokemon-image {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      background-size: cover;
+      background-position: center;
+      background-color: #666;
+      border: 1px solid #888;
+    }
+    
+    .team-pokemon-name {
+      font-size: 10px;
+      font-weight: bold;
+      margin-bottom: 3px;
+      text-align: center;
+      color: white;
+    }
+    
+    .hp-bar-container {
+      width: 100%;
+      background: #333;
+      border-radius: 4px;
+      height: 8px;
+      margin-bottom: 4px;
+      border: 1px solid #555;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hp-bar {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .hp-bar.high {
+      background: linear-gradient(90deg, #4caf50, #81c784);
+    }
+    
+    .hp-bar.medium {
+      background: linear-gradient(90deg, #ff9800, #ffb74d);
+    }
+    
+    .hp-bar.low {
+      background: linear-gradient(90deg, #f44336, #ef5350);
+    }
+    
+    .hp-text {
+      font-size: 8px;
+      color: #ccc;
+      text-align: center;
+      margin-top: 1px;
+    }
+    
+    /* Card Binder Styles */
+    .card-binder-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+      padding: 20px;
+      background: #222;
+      border-radius: 10px;
+    }
+    
+    .trading-card {
+      background: #333;
+      border: 3px solid #555;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      transition: all 0.3s;
+      aspect-ratio: 2.5/3.5;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    .trading-card.collected {
+      border-color: #ffd700;
+      background: linear-gradient(135deg, #444, #555);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    }
+    
+    .trading-card.locked {
+      opacity: 0.3;
+      filter: grayscale(100%);
+    }
+    
+    .trading-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    
+    .card-image {
+      width: 100%;
+      height: 70%;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #666;
+    }
+    
+    .card-info {
+      margin-top: 8px;
+    }
+    
+    .card-name {
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 3px;
+    }
+    
+    .card-status {
+      font-size: 10px;
+      color: #ccc;
+    }
+    
+    /* Card Detail Modal */
+    .card-detail-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .card-detail-content {
+      background: #333;
+      border: 3px solid #555;
+      border-radius: 15px;
+      padding: 30px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      position: relative;
+    }
+    
+    .card-detail-content.collected {
+      border-color: #ffd700;
+      background: linear-gradient(135deg, #444, #555);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+    }
+    
+    .card-detail-content.locked {
+      opacity: 0.7;
+      filter: grayscale(100%);
+    }
+    
+    .card-detail-image {
+      width: 100%;
+      max-width: 300px;
+      height: 420px;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid #666;
+      margin-bottom: 20px;
+    }
+    
+    .card-detail-info {
+      color: white;
+    }
+    
+    .card-detail-name {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .card-detail-status {
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    
+    .card-detail-description {
+      font-size: 14px;
+      color: #ccc;
+      line-height: 1.4;
+    }
+    
+    .card-detail-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: #666;
+      color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card-detail-close:hover {
+      background: #888;
+    }
+    
+    .bag-section {
+      margin-top: 20px;
+    }
+    
+    .battle-selection {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    .battle-pokemon-card {
+      background: #444;
+      border: 2px solid #666;
+      border-radius: 10px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .battle-pokemon-card:hover {
+      border-color: #4CAF50;
+      background: #4a4a4a;
+    }
+    
+    .battle-pokemon-card.selected {
+      border-color: #FFD700;
+      background: #5a5a2a;
+    }
+    
+    .battle-pokemon-card.fainted {
+      opacity: 0.5;
+      background: #666;
+      cursor: not-allowed;
+    }
+    
+    .battle-log {
+      background: #1a1a1a;
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 15px;
+      height: 200px;
+      overflow-y: auto;
+      margin: 15px 0;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    
+    .hp-bar {
+      width: 100%;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+      transition: width 0.3s ease;
+    }
+    
+    .battle-info {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .battle-pokemon {
+      flex: 1;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 10px;
+      border-radius: 10px;
+    }
+    
+    .controls-info {
+      background: #444;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    
+    .move-selection {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .move-button {
+      background: #4a4a4a;
+      border: 2px solid #666;
+      border-radius: 8px;
+      padding: 12px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    
+    .move-button:hover {
+      border-color: #4CAF50;
+      background: #555;
+    }
+    
+    .move-button.selected {
+      border-color: #FFD700;
+      background: #5a5a2a;
+    }
+    
+    .move-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .move-details {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+    
+    .effectiveness {
+      font-weight: bold;
+      color: #ff6666;
+    }
+    
+    .effectiveness.super-effective {
+      color: #66ff66;
+    }
+    
+    .effectiveness.not-very-effective {
+      color: #ffaa00;
+    }
+    
+    .effectiveness.no-effect {
+      color: #888;
+    }
+    
+    .battle-pokemon-info {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    .current-battle-pokemon {
+      flex: 1;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 10px;
+      border-radius: 10px;
+    }
+    
+    /* Audio Controls */
+    .audio-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #555;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    
+    .audio-controls.minimized {
+      width: 50px;
+      height: 50px;
+      padding: 5px;
+    }
+    
+    .audio-controls.minimized .audio-content {
+      display: none;
+    }
+    
+    .minimize-btn {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #666;
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .minimize-btn:hover {
+      background: #888;
+    }
+    
+    .audio-button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 2px;
+      font-size: 12px;
+      transition: background 0.3s;
+    }
+    
+    .audio-button:hover {
+      background: #45a049;
+    }
+    
+    .audio-button.paused {
+      background: #f44336;
+    }
+    
+    .volume-control {
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+    
+    .volume-slider {
+      width: 80px;
+      margin-left: 5px;
+    }
+    
+    #youtube-player {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="map-section">
+      <div class="map-container">
+        <div class="map-grid" id="map-grid"></div>
+      </div>
+    </div>
+    
+    <div class="ui-section">
+      <div class="ui-panel">
+        <h2>Pokemon Collection</h2>
+        <div>Collected: <span id="collection-count">0</span>/52</div>
+        <div>Money: $<span id="money">0</span></div>
+        <div>Position: (<span id="player-x">25</span>, <span id="player-y">25</span>)</div>
+        <div>Steps: <span id="step-count">0</span></div>
+        <button class="button" onclick="openBag()">View Bag</button>
+        <button class="button" onclick="openShop()">Shop</button>
+      </div>
+      
+      <div class="ui-panel">
+        <h3>Current Team</h3>
+        <div id="team-display">No Pokemon in team</div>
+        <div style="margin-top: 10px;">
+          <button class="button" onclick="autoSelectTeam()" id="auto-team-btn" style="display:none;">Auto-Select Team</button>
+        </div>
+      </div>
+      
+      <div class="ui-panel">
+        <h3>Game Log</h3>
+        <div id="game-status">Walk on grass to find Pokemon!</div>
+      </div>
+      
+      <div class="controls-info">
+        <strong>Controls:</strong><br>
+        WASD/Arrow Keys: Move<br>
+        Enter: Interact with trainers<br>
+        Walk on grass (green) for Pokemon!
+      </div>
+    </div>
+  </div>
+
+  <!-- Bag Modal -->
+  <div class="modal" id="bag-modal">
+    <div class="modal-content">
+      <h2>Collection</h2>
+      <button class="button danger" onclick="closeBag()" style="float: right;">Close</button>
+      
+      <!-- Bag Tabs -->
+      <div class="shop-tabs">
+        <button class="shop-tab active" onclick="showBagTab('pokemon')">Pokemon</button>
+        <button class="shop-tab" onclick="showBagTab('cards')">Card Binder</button>
+      </div>
+      
+      <!-- Pokemon Collection -->
+      <div id="pokemon-collection" class="bag-section">
+        <div class="card-grid" id="pokemon-cards"></div>
+      </div>
+      
+      <!-- Card Binder -->
+      <div id="card-binder" class="bag-section" style="display: none;">
+        <div class="card-binder-grid" id="trading-cards-display">
+        </div>
+        <div id="card-victory-message" style="display: none; text-align: center; margin-top: 20px;">
+          <h1 style="color: gold;">🎉 YOU BEAT THE GAME! 🎉</h1>
+          <p>Congratulations! You've collected all 8 trading cards!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div class="modal" id="shop-modal">
+    <div class="modal-content">
+      <h2>Pokemon Shop</h2>
+      <button class="button danger" onclick="closeShop()" style="float: right;">Close</button>
+      <div style="margin-bottom: 20px;">
+        <strong>Money: $<span id="money-display">500</span></strong>
+      </div>
+      
+      <!-- Shop Tabs -->
+      <div class="shop-tabs">
+        <button class="shop-tab active" onclick="showShopTab('pokemon')">Pokemon ($100)</button>
+      </div>
+      
+      <!-- Pokemon Shop -->
+      <div id="pokemon-shop" class="shop-section">
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f0f0f0; color: black;">
+                <th style="padding: 8px; border: 1px solid #ccc;">Pokemon</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">Type(s)</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">Obtain</th>
+              </tr>
+            </thead>
+            <tbody id="pokemon-shop-list">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Battle Modal -->
+  <div class="modal" id="battle-modal">
+    <div class="modal-content">
+      <h2>Trainer Battle</h2>
+      <div id="battle-content"></div>
+    </div>
+  </div>
+
+  <!-- Card Detail Modal -->
+  <div class="card-detail-modal" id="card-detail-modal">
+    <div class="card-detail-content" id="card-detail-content">
+      <button class="card-detail-close" onclick="closeCardDetail()">×</button>
+      <div class="card-detail-image" id="card-detail-image"></div>
+      <div class="card-detail-info">
+        <div class="card-detail-name" id="card-detail-name"></div>
+        <div class="card-detail-status" id="card-detail-status"></div>
+        <div class="card-detail-description" id="card-detail-description"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+            const pokemonStats = {
+            "Dialga": [404, 339, 339, 399, 299, 279],
+            "Primal Kyogre": [404, 399, 279, 459, 419, 279],
+            "Mega Mewtwo Y": [416, 399, 239, 487, 339, 379],
+            "Arceus": [444, 339, 339, 339, 339, 339],
+            "Primal Groudon": [404, 459, 419, 399, 279, 279],
+            "Mega Rayquaza": [414, 459, 299, 459, 299, 329],
+            "Xerneas": [456, 361, 289, 361, 295, 297],
+            "Yveltal": [456, 361, 289, 361, 295, 297],
+            "Ultra Necrozma": [398, 433, 293, 433, 293, 357],
+            "Marshadow": [384, 349, 259, 279, 279, 349],
+            "Regigigas": [424, 419, 319, 259, 319, 299],
+            "Mega Salamence": [394, 389, 359, 339, 279, 339],
+            "Mega Gengar": [324, 229, 259, 439, 289, 359],
+            "Mega Gallade": [340, 429, 289, 229, 329, 319],
+            "Mega Metagross": [364, 389, 399, 309, 319, 319],
+            "Mega Blaziken": [364, 419, 259, 359, 259, 299],
+            "Calyrex Shadow Rider": [404, 269, 259, 429, 299, 399],
+            "Zacian Crowned": [388, 439, 329, 259, 329, 395],
+            "Zamazenta Crowned": [388, 359, 389, 259, 389, 355],
+            "Miraidon": [404, 269, 299, 369, 329, 369],
+            "Koraidon": [404, 369, 329, 269, 299, 369],
+            "Ho-Oh": [416, 359, 279, 319, 407, 279],
+            "Lugia": [416, 279, 359, 279, 407, 319],
+            "Reshiram": [404, 339, 299, 399, 339, 279],
+            "Zekrom": [404, 399, 339, 339, 299, 279],
+            "Zygarde Complete": [636, 299, 341, 281, 289, 269],
+            "Kyurem White": [454, 339, 279, 439, 299, 289],
+            "Kyurem Black": [454, 439, 299, 339, 279, 289],
+            "Palkia Origin Forme": [384, 339, 299, 399, 339, 339],
+            "Lunala": [478, 325, 277, 373, 313, 293],
+            "Solgaleo": [478, 373, 313, 325, 277, 293],
+            "Mega Swampert": [404, 399, 319, 289, 319, 239],
+            "Magearna": [364, 289, 329, 359, 329, 229],
+            "Giratina Origin Forme": [534, 339, 299, 339, 299, 279],
+            "Mega Gardevoir": [340, 269, 229, 429, 369, 299],
+            "Mega Beedrill": [334, 399, 179, 129, 259, 389],
+            "Mega Aerodactyl": [364, 369, 269, 239, 289, 399],
+            "Gholdengo": [378, 219, 289, 365, 281, 267],
+            "Darkrai": [344, 279, 279, 369, 279, 349],
+            "Walking Wake": [402, 265, 281, 349, 265, 317],
+            "Iron Leaves": [384, 359, 275, 239, 315, 307],
+            "Mega Charizard Y": [360, 307, 255, 417, 329, 299],
+            "Mega Charizard X": [360, 359, 321, 359, 269, 299],
+            "Pecharunt": [380, 275, 419, 275, 275, 275],
+            "Ogrepon-Wellspring": [364, 339, 267, 219, 291, 319],
+            "Ogrepon-Hearthflame": [364, 339, 267, 219, 291, 319],
+            "Ogrepon-Cornerstone": [364, 339, 267, 219, 291, 319],
+            "Ash-Greninja": [348, 389, 233, 405, 241, 363],
+            "Zeraora": [380, 323, 249, 303, 259, 385],
+            "Deoxys Attack Forme": [304, 459, 139, 459, 139, 399],
+            "Eternatus": [484, 269, 289, 389, 289, 359],
+            "Slaking": [504, 419, 299, 289, 229, 299],
+            "Palafin Hero Forme": [404, 419, 293, 311, 273, 299],
+        };
+
+        const moves = {
+            "Roar of Time": { type: "Dragon", basePower: 150, accuracy: 90 },
+            "Spacial Rend": { type: "Dragon", basePower: 100, accuracy: 95 },
+            "Earth Power": { type: "Ground", basePower: 90, accuracy: 100 },
+            "Flash Cannon": { type: "Steel", basePower: 80, accuracy: 100 },
+            "Aura Sphere": { type: "Fighting", basePower: 80, accuracy: 100 },
+            "Power Gem": { type: "Rock", basePower: 80, accuracy: 100 },
+            "Water Spout": { type: "Water", basePower: 150, accuracy: 100 },
+            "Grass Knot": { type: "Grass", basePower: 60, accuracy: 100 },
+            "Ice Beam": { type: "Ice", basePower: 90, accuracy: 100 },
+            "Body Slam": { type: "Normal", basePower: 85, accuracy: 100 },
+            "Future Sight": { type: "Psychic", basePower: 120, accuracy: 100 },
+            "Ancient Power": { type: "Rock", basePower: 60, accuracy: 100 },
+            "Psychic": { type: "Psychic", basePower: 90, accuracy: 100 },
+            "Hyper Beam": { type: "Normal", basePower: 150, accuracy: 90 },
+            "Judgment": { type: "Normal", basePower: 100, accuracy: 100 },
+            "Precipice Blades": { type: "Ground", basePower: 120, accuracy: 85 },
+            "Fire Punch": {type: "Fire", basePower: 75, accuracy: 100 },
+            "High Jump Kick": { type: "Fighting", basePower: 130, accuracy: 90 },
+            "Rock Slide": { type: "Rock", basePower: 75, accuracy: 90 },
+            "Stone Edge": { type: "Rock", basePower: 100, accuracy: 80 },
+            "Eruption": { type: "Fire", basePower: 150, accuracy: 100 },
+            "Outrage": { type: "Dragon", basePower: 120, accuracy: 100 },
+            "Extreme Speed": { type: "Normal", basePower: 80, accuracy: 100 },
+            "Crunch": { type: "Dark", basePower: 80, accuracy: 100 },
+            "Dragon Ascent": { type: "Flying", basePower: 120, accuracy: 100 },
+            "Play Rough": { type: "Fairy", basePower: 90, accuracy: 90 },
+            "Close Combat": { type: "Fighting", basePower: 120, accuracy: 100 },
+            "Giga Impact": { type: "Normal", basePower: 150, accuracy: 90 },
+            "Megahorn": { type: "Bug", basePower: 120, accuracy: 85 },
+            "Sky Attack": { type: "Flying", basePower: 140, accuracy: 90 },
+            "Dragon Rush": { type: "Dragon", basePower: 100, accuracy: 75 },
+            "Focus Blast": { type: "Fighting", basePower: 120, accuracy: 70 },
+            "Foul Play": { type: "Dark", basePower: 95, accuracy: 100 },
+            "Prismatic Laser": { type: "Psychic", basePower: 160, accuracy: 100 },
+            "Charge Beam": { type: "Electric", basePower: 50, accuracy: 90 },
+            "Night Slash": { type: "Dark", basePower: 70, accuracy: 100 },
+            "Spectral Thief": { type: "Ghost", basePower: 90, accuracy: 100 },
+            "Ice Punch": { type: "Ice", basePower: 75, accuracy: 100 },
+            "Hammer Arm": { type: "Fighting", basePower: 100, accuracy: 90 },
+            "Zen Headbutt": { type: "Psychic", basePower: 80, accuracy: 90 },
+            "Knock Off": { type: "Dark", basePower: 65, accuracy: 100 },
+            "Fly": { type: "Flying", basePower: 90, accuracy: 95 },
+            "Flamethrower": { type: "Fire", basePower: 90, accuracy: 100 },
+            "Sludge Bomb": { type: "Poison", basePower: 90, accuracy: 100 },
+            "Shadow Ball": { type: "Ghost", basePower: 80, accuracy: 100 },
+            "Dream Eater": { type: "Psychic", basePower: 100, accuracy: 100 },
+            "Dark Pulse": { type: "Dark", basePower: 80, accuracy: 100 },
+            "Psycho Cut": { type: "Psychic", basePower: 70, accuracy: 100 },
+            "Leaf Blade": { type: "Grass", basePower: 90, accuracy: 100 },
+            "Meteor Mash": { type: "Steel", basePower: 90, accuracy: 90 },
+            "Earthquake": { type: "Ground", basePower: 100, accuracy: 100 },
+            "Flare Blitz": { type: "Fire", basePower: 120, accuracy: 100 },
+            "Brave Bird": { type: "Flying", basePower: 120, accuracy: 100 },
+            "Shadow Claw": { type: "Ghost", basePower: 70, accuracy: 100 },
+            "Astral Barrage": { type: "Ghost", basePower: 120, accuracy: 100 },
+            "Solar Beam": { type: "Grass", basePower: 120, accuracy: 100 },
+            "Snarl": { type: "Dark", basePower: 55, accuracy: 95 },
+            "Behemoth Blade": { type: "Steel", basePower: 100, accuracy: 100 },
+            "Behemoth Bash": { type: "Steel", basePower: 100, accuracy: 100 },
+            "Wild Charge": { type: "Electric", basePower: 90, accuracy: 100 },
+            "Draco Meteor": { type: "Dragon", basePower: 130, accuracy: 90 },
+            "Electro Drift": { type: "Electric", basePower: 100, accuracy: 100 },
+            "Overheat": { type: "Fire", basePower: 130, accuracy: 90 },
+            "Sacred Fire": { type: "Fire", basePower: 100, accuracy: 95 },
+            "Iron Head": { type: "Steel", basePower: 80, accuracy: 100 },
+            "Aeroblast": { type: "Flying", basePower: 100, accuracy: 95 },
+            "Thunder": { type: "Electric", basePower: 110, accuracy: 70 },
+            "Hydro Pump": { type: "Water", basePower: 110, accuracy: 80 },
+            "Blue Flare": { type: "Fire", basePower: 130, accuracy: 85 },
+            "Fusion Flare": { type: "Fire", basePower: 100, accuracy: 100 },
+            "Fusion Bolt": { type: "Electric", basePower: 100, accuracy: 100 },
+            "Freeze Shock": { type: "Ice", basePower: 140, accuracy: 90 },
+            "Ice Burn": { type: "Ice", basePower: 140, accuracy: 90 },
+            "Moongeist Beam": { type: "Ghost", basePower: 100, accuracy: 100 },
+            "Sunsteel Strike": { type: "Steel", basePower: 100, accuracy: 100 },
+            "Wave Crash": { type: "Water", basePower: 120, accuracy: 100 },
+            "Bolt Strike": { type: "Electric", basePower: 130, accuracy: 85 },
+            "Extrasensory": { type: "Psychic", basePower: 80, accuracy: 100 },
+            "Moonblast": { type: "Fairy", basePower: 95, accuracy: 100 },
+            "Fleur Cannon": { type: "Fairy", basePower: 130, accuracy: 90 },
+            "Synchronoise": { type: "Psychic", basePower: 120, accuracy: 100 },
+            "Shadow Force": { type: "Ghost", basePower: 120, accuracy: 100 },
+            "Dragon Claw": { type: "Dragon", basePower: 80, accuracy: 100 },
+            "Magical Leaf": { type: "Grass", basePower: 60, accuracy: 100 },
+            "Mystical Fire": { type: "Fire", basePower: 75, accuracy: 100 },
+            "Drill Run": { type: "Ground", basePower: 80, accuracy: 95 },
+            "Poison Jab": { type: "Poison", basePower: 80, accuracy: 100 },
+            "X-Scissor": { type: "Bug", basePower: 80, accuracy: 100 },
+            "Make It Rain": { type: "Steel", basePower: 120, accuracy: 100 },
+            "Water Pulse": { type: "Water", basePower: 60, accuracy: 100 },
+            "Solar Blade": { type: "Grass", basePower: 125, accuracy: 100 },
+            "Psyblade": { type: "Psychic", basePower: 80, accuracy: 100 },
+            "Air Slash": { type: "Flying", basePower: 75, accuracy: 95 },
+            "Thunder Punch": { type: "Electric", basePower: 75, accuracy: 100 },
+            "Malignant Chain": { type: "Poison", basePower: 100, accuracy: 100 },
+            "Tera Blast": { type: "Normal", basePower: 80, accuracy: 100 },
+            "Poltergeist": { type: "Ghost", basePower: 110, accuracy: 90 },
+            "Wood Hammer": { type: "Grass", basePower: 120, accuracy: 100 },
+            "Superpower": { type: "Fighting", basePower: 120, accuracy: 100 },
+            "Throat Chop": { type: "Dark", basePower: 80, accuracy: 100 },
+            "Ivy Cudgel (Water)": { type: "Water", basePower: 100, accuracy: 100 },
+            "Ivy Cudgel (Fire)": { type: "Fire", basePower: 100, accuracy: 100 },
+            "Ivy Cudgel (Rock)": { type: "Rock", basePower: 100, accuracy: 100 },
+            "Plasma Fists": { type: "Electric", basePower: 100, accuracy: 100 },
+            "Psycho Boost": { type: "Psychic", basePower: 140, accuracy: 90 },
+            "Dynamax Cannon": { type: "Dragon", basePower: 100, accuracy: 100 },
+            "Focus Punch": { type: "Fighting", basePower: 150, accuracy: 100 },
+            "Bitter Blade": { type: "Fire", basePower: 90, accuracy: 100 },
+            "Thunderbolt": { type: "Electric", basePower: 90, accuracy: 100 },
+            "Hurricane": { type: "Flying", basePower: 110, accuracy: 70 },
+            "Heat Wave": { type: "Fire", basePower: 95, accuracy: 90 },
+            "Lovely Wind": { type: "Flying", basePower: 100, accuracy: 100 },
+            "Bug Buzz": { type: "Bug", basePower: 90, accuracy: 100 },
+            "Diamond Storm": { type: "Rock", basePower: 100, accuracy: 95 },
+            "Psyshock": { type: "Psychic", basePower: 80, accuracy: 100 },
+            "Gunk Shot": { type: "Poison", basePower: 120, accuracy: 80 },
+        };
+
+        // Physical moves array for damage calculation
+        const physicalMoves = new Set([
+            "Body Slam","Precipice Blades","Stone Edge","Outrage","Extreme Speed","Crunch",
+            "Dragon Ascent","Play Rough","Close Combat","Giga Impact","Megahorn","Sky Attack",
+            "Dragon Rush","Foul Play","Night Slash","Spectral Thief","Ice Punch","Hammer Arm",
+            "Zen Headbutt","Knock Off","Fly","Psycho Cut","Leaf Blade","Meteor Mash",
+            "Earthquake","Flare Blitz","High Jump Kick","Brave Bird","Shadow Claw","Behemoth Blade",
+            "Behemoth Bash","Wild Charge","Sacred Fire","Iron Head","Fusion Bolt","Freeze Shock",
+            "Sunsteel Strike","Wave Crash","Shadow Force","Dragon Claw","Drill Run","Poison Jab",
+            "X-Scissor","Solar Blade","Psyblade","Thunder Punch","Poltergeist","Wood Hammer",
+            "Superpower","Throat Chop","Ivy Cudgel (Water)","Ivy Cudgel (Fire)","Ivy Cudgel (Rock)",
+            "Plasma Fists","Focus Punch", "Bitter Blade"
+        ]);
+
+
+        const pokemonMoves = {
+           "Dialga": ["Roar of Time", "Earth Power", "Flash Cannon", "Aura Sphere"],
+            "Primal Kyogre": ["Water Spout", "Grass Knot", "Ice Beam", "Body Slam"],
+            "Mega Mewtwo Y": ["Future Sight", "Ancient Power", "Psychic", "Aura Sphere"],
+            "Arceus": ["Hyper Beam", "Future Sight", "Earth Power", "Judgment"],
+            "Primal Groudon": ["Precipice Blades", "Stone Edge", "Eruption", "Hammer Arm"],
+            "Mega Rayquaza": ["Outrage", "Extreme Speed", "Crunch", "Dragon Ascent"],
+            "Xerneas": ["Play Rough", "Close Combat", "Giga Impact", "Megahorn"],
+            "Yveltal": ["Sky Attack", "Dragon Rush", "Focus Blast", "Foul Play"],
+            "Ultra Necrozma": ["Prismatic Laser", "Power Gem", "Charge Beam", "Night Slash"],
+            "Marshadow": ["Close Combat", "Spectral Thief", "Ice Punch", "Fire Punch"],
+            "Regigigas": ["Giga Impact", "Hammer Arm", "Zen Headbutt", "Knock Off"],
+            "Mega Salamence": ["Outrage", "Fly", "Flamethrower", "Crunch"],
+            "Mega Gengar": ["Sludge Bomb", "Shadow Ball", "Dream Eater", "Dark Pulse"],
+            "Mega Gallade": ["Close Combat", "Psycho Cut", "Leaf Blade", "Night Slash"],
+            "Mega Metagross": ["Meteor Mash", "Zen Headbutt", "Hammer Arm", "Earthquake"],
+            "Mega Blaziken": ["High Jump Kick", "Flare Blitz", "Brave Bird", "Shadow Claw"],
+            "Calyrex Shadow Rider": ["Astral Barrage", "Solar Beam", "Future Sight", "Snarl"],
+            "Zacian Crowned": ["Play Rough", "Behemoth Blade", "Giga Impact", "Zen Headbutt"],
+            "Zamazenta Crowned": ["Close Combat", "Behemoth Bash", "Wild Charge", "Crunch"],
+            "Miraidon": ["Draco Meteor", "Electro Drift", "Overheat", "Hyper Beam"],
+            "Koraidon": ["Close Combat", "Outrage", "Flare Blitz", "Giga Impact"],
+            "Ho-Oh": ["Sky Attack", "Sacred Fire", "Iron Head", "Zen Headbutt"],
+            "Lugia": ["Aeroblast", "Thunder", "Hydro Pump", "Future Sight"],
+            "Reshiram": ["Blue Flare", "Draco Meteor", "Earth Power", "Extrasensory"],
+            "Zekrom": ["Bolt Strike", "Outrage", "Crunch", "Rock Slide"],
+            "Zygarde Complete": ["Earthquake", "Outrage", "Crunch", "Stone Edge"],
+            "Kyurem White": ["Ice Burn", "Fusion Flare", "Draco Meteor", "Psychic"],
+            "Kyurem Black": ["Outrage", "Freeze Shock", "Fusion Bolt", "Shadow Claw"],
+            "Palkia Origin Forme": ["Spacial Rend", "Hydro Pump", "Earth Power", "Power Gem"],
+            "Lunala": ["Future Sight", "Moongeist Beam", "Focus Blast", "Moonblast"],
+            "Solgaleo": ["Sunsteel Strike", "Zen Headbutt", "Giga Impact", "Crunch"],
+            "Mega Swampert": ["Earthquake", "Wave Crash", "Hammer Arm", "Stone Edge"],
+            "Magearna": ["Fleur Cannon", "Flash Cannon", "Aura Sphere", "Synchronoise"],
+            "Giratina Origin Forme": ["Shadow Force", "Dragon Claw", "Aura Sphere", "Earth Power"],
+            "Mega Gardevoir": ["Moonblast", "Future Sight", "Mystical Fire", "Magical Leaf"],
+            "Mega Beedrill": ["Poison Jab", "X-Scissor", "Drill Run", "Giga Impact"],
+            "Mega Aerodactyl": ["Fly", "Stone Edge", "Earthquake", "Crunch"],
+            "Gholdengo": ["Make It Rain", "Shadow Ball", "Power Gem", "Charge Beam"],
+            "Darkrai": ["Dark Pulse", "Dream Eater", "Ice Beam", "Sludge Bomb"],
+            "Walking Wake": ["Hydro Pump", "Draco Meteor", "Flamethrower", "Water Pulse"],
+            "Iron Leaves": ["Close Combat", "Solar Blade", "Megahorn", "Psyblade"],
+            "Mega Charizard Y": ["Overheat", "Solar Beam", "Draco Meteor", "Air Slash"],
+            "Mega Charizard X": ["Flare Blitz", "Outrage", "Earthquake", "Shadow Claw"],
+            "Pecharunt": ["Malignant Chain", "Shadow Ball", "Tera Blast", "Poltergeist"],
+            "Ogrepon-Wellspring": ["Wood Hammer", "Superpower", "Throat Chop", "Ivy Cudgel (Water)"],
+            "Ogrepon-Hearthflame": ["Wood Hammer", "Superpower", "Throat Chop", "Ivy Cudgel (Fire)"],
+            "Ogrepon-Cornerstone": ["Wood Hammer", "Superpower", "Throat Chop", "Ivy Cudgel (Rock)"],
+            "Ash-Greninja": ["Extrasensory", "Dark Pulse", "Ice Beam", "Hydro Pump"],
+            "Zeraora": ["Plasma Fists", "Close Combat", "Throat Chop", "Play Rough"],
+            "Deoxys Attack Forme": ["Hyper Beam", "Psycho Boost", "Fire Punch", "Thunder Punch"],
+            "Eternatus": ["Dynamax Cannon", "Flamethrower", "Sludge Bomb", "Hyper Beam"],
+            "Slaking": ["Giga Impact", "Focus Punch", "Throat Chop", "Play Rough"],
+            "Palafin Hero Forme": ["Wave Crash", "Focus Punch", "Ice Punch", "Iron Head"],
+        };
+
+
+        const pokemonTypes = {
+             "Dialga": ["Dragon", "Steel"],
+            "Primal Kyogre": ["Water"],
+            "Mega Mewtwo Y": ["Psychic"],
+            "Arceus": ["Normal"],
+            "Primal Groudon": ["Ground", "Fire"],
+            "Mega Rayquaza": ["Dragon", "Flying"],
+            "Xerneas": ["Fairy"],
+            "Yveltal": ["Dark", "Flying"],
+            "Ultra Necrozma": ["Psychic", "Dragon"],
+            "Marshadow": ["Fighting", "Ghost"],
+            "Regigigas": ["Normal"],
+            "Mega Salamence": ["Dragon", "Flying"],
+            "Mega Gengar": ["Ghost", "Poison"],
+            "Mega Gallade": ["Psychic", "Fighting"],
+            "Mega Metagross": ["Steel", "Psychic"],
+            "Mega Blaziken": ["Fire", "Fighting"],
+            "Calyrex Shadow Rider": ["Psychic", "Ghost"],
+            "Zacian Crowned": ["Fairy", "Steel"],
+            "Zamazenta Crowned": ["Fighting", "Steel"],
+            "Miraidon": ["Electric", "Dragon"],
+            "Koraidon": ["Fighting", "Dragon"],
+            "Ho-Oh": ["Fire", "Flying"],
+            "Lugia": ["Psychic", "Flying"],
+            "Reshiram": ["Dragon", "Fire"],
+            "Zekrom": ["Dragon", "Electric"],
+            "Zygarde Complete": ["Dragon", "Ground"],
+            "Kyurem White": ["Dragon", "Ice"],
+            "Kyurem Black": ["Dragon", "Ice"],
+            "Palkia Origin Forme": ["Water", "Dragon"],
+            "Lunala": ["Psychic", "Ghost"],
+            "Solgaleo": ["Steel", "Psychic"],
+            "Mega Swampert": ["Water", "Ground"],
+            "Magearna": ["Steel", "Fairy"],
+            "Giratina Origin Forme": ["Ghost", "Dragon"],
+            "Mega Gardevoir": ["Psychic", "Fairy"],
+            "Mega Beedrill": ["Bug", "Poison"],
+            "Mega Aerodactyl": ["Rock", "Flying"],
+            "Gholdengo": ["Steel", "Ghost"],
+            "Darkrai": ["Dark"],
+            "Walking Wake": ["Water", "Dragon"],
+            "Iron Leaves": ["Grass", "Psychic"],
+            "Mega Charizard Y": ["Fire", "Flying"],
+            "Mega Charizard X": ["Fire", "Dragon"],
+            "Pecharunt": ["Poison", "Ghost"],
+            "Ogrepon-Wellspring": ["Water", "Grass"],
+            "Ogrepon-Hearthflame": ["Fire", "Grass"],
+            "Ogrepon-Cornerstone": ["Rock", "Grass"],
+            "Ash-Greninja": ["Water", "Dark"],
+            "Zeraora": ["Electric"],
+            "Deoxys Attack Forme": ["Psychic"],
+            "Eternatus": ["Poison", "Dragon"],
+            "Slaking": ["Normal"],
+            "Palafin Hero Forme": ["Water"],
+        };
+
+        const typeChart = {
+            "Normal": { "Rock": 0.5, "Ghost": 0, "Steel": 0.5 },
+            "Fire": { "Fire": 0.5, "Water": 0.5, "Grass": 2, "Ice": 2, "Bug": 2, "Rock": 0.5, "Dragon": 0.5, "Steel": 2 },
+            "Water": { "Fire": 2, "Water": 0.5, "Grass": 0.5, "Ground": 2, "Rock": 2, "Dragon": 0.5 },
+            "Electric": { "Water": 2, "Electric": 0.5, "Grass": 0.5, "Ground": 0, "Flying": 2, "Dragon": 0.5 },
+            "Grass": { "Fire": 0.5, "Water": 2, "Grass": 0.5, "Poison": 0.5, "Ground": 2, "Flying": 0.5, "Bug": 0.5, "Rock": 2, "Dragon": 0.5, "Steel": 0.5 },
+            "Ice": { "Fire": 0.5, "Water": 0.5, "Grass": 2, "Ice": 0.5, "Ground": 2, "Flying": 2, "Dragon": 2, "Steel": 0.5 },
+            "Fighting": { "Normal": 2, "Ice": 2, "Rock": 2, "Dark": 2, "Steel": 2, "Poison": 0.5, "Flying": 0.5, "Psychic": 0.5, "Bug": 0.5, "Fairy": 0.5, "Ghost": 0 },
+            "Poison": { "Grass": 2, "Poison": 0.5, "Ground": 0.5, "Rock": 0.5, "Ghost": 0.5, "Steel": 0, "Fairy": 2 },
+            "Ground": { "Fire": 2, "Electric": 2, "Grass": 0.5, "Poison": 2, "Flying": 0, "Bug": 0.5, "Rock": 2, "Steel": 2 },
+            "Flying": { "Electric": 0.5, "Grass": 2, "Fighting": 2, "Bug": 2, "Rock": 0.5, "Steel": 0.5 },
+            "Psychic": { "Fighting": 2, "Poison": 2, "Psychic": 0.5, "Dark": 0, "Steel": 0.5 },
+            "Bug": { "Fire": 0.5, "Grass": 2, "Fighting": 0.5, "Poison": 0.5, "Flying": 0.5, "Psychic": 2, "Ghost": 0.5, "Dark": 2, "Steel": 0.5, "Fairy": 0.5 },
+            "Rock": { "Fire": 2, "Ice": 2, "Fighting": 0.5, "Ground": 0.5, "Flying": 2, "Bug": 2, "Steel": 0.5 },
+            "Ghost": { "Normal": 0, "Psychic": 2, "Ghost": 2, "Dark": 0.5 },
+            "Dragon": { "Dragon": 2, "Steel": 0.5, "Fairy": 0 },
+            "Dark": { "Fighting": 0.5, "Psychic": 2, "Ghost": 2, "Dark": 0.5, "Fairy": 0.5 },
+            "Steel": { "Fire": 0.5, "Water": 0.5, "Electric": 0.5, "Ice": 2, "Rock": 2, "Steel": 0.5, "Fairy": 2 },
+            "Fairy": { "Fire": 0.5, "Fighting": 2, "Poison": 0.5, "Dragon": 2, "Dark": 2, "Steel": 0.5 }
+        };
+
+        const pokemonImages = {
+            "Dialga": "https://img.pokemondb.net/artwork/large/dialga.jpg",
+            "Primal Kyogre": "https://img.pokemondb.net/artwork/large/kyogre-primal.jpg",
+            "Mega Mewtwo Y": "https://img.pokemondb.net/artwork/large/mewtwo-mega-y.jpg",
+            "Arceus": "https://img.pokemondb.net/artwork/large/arceus.jpg",
+            "Primal Groudon": "https://img.pokemondb.net/artwork/large/groudon-primal.jpg",
+            "Mega Rayquaza": "https://img.pokemondb.net/artwork/large/rayquaza-mega.jpg",
+            "Xerneas": "https://img.pokemondb.net/artwork/large/xerneas.jpg",
+            "Yveltal": "https://img.pokemondb.net/artwork/large/yveltal.jpg",
+            "Ultra Necrozma": "https://img.pokemondb.net/artwork/large/necrozma-ultra.jpg",
+            "Marshadow": "https://img.pokemondb.net/artwork/large/marshadow.jpg",
+            "Regigigas": "https://img.pokemondb.net/artwork/large/regigigas.jpg",
+            "Mega Salamence": "https://img.pokemondb.net/artwork/large/salamence-mega.jpg",
+            "Mega Gengar": "https://img.pokemondb.net/artwork/large/gengar-mega.jpg",
+            "Mega Gallade": "https://img.pokemondb.net/artwork/large/gallade-mega.jpg",
+            "Mega Metagross": "https://img.pokemondb.net/artwork/large/metagross-mega.jpg",
+            "Mega Blaziken": "https://img.pokemondb.net/artwork/large/blaziken-mega.jpg",
+            "Calyrex Shadow Rider": "https://img.pokemondb.net/artwork/large/calyrex-shadow-rider.jpg",
+            "Zacian Crowned": "https://img.pokemondb.net/artwork/large/zacian-crowned.jpg",
+            "Zamazenta Crowned": "https://img.pokemondb.net/artwork/large/zamazenta-crowned.jpg",
+            "Miraidon": "https://img.pokemondb.net/artwork/large/miraidon.jpg",
+            "Koraidon": "https://img.pokemondb.net/artwork/large/koraidon.jpg",
+            "Ho-Oh": "https://img.pokemondb.net/artwork/large/ho-oh.jpg",
+            "Lugia": "https://img.pokemondb.net/artwork/large/lugia.jpg",
+            "Reshiram": "https://img.pokemondb.net/artwork/large/reshiram.jpg",
+            "Zekrom": "https://img.pokemondb.net/artwork/large/zekrom.jpg",
+            "Zygarde Complete": "https://archives.bulbagarden.net/media/upload/f/fb/0718Zygarde-Complete.png",
+            "Kyurem White": "https://img.pokemondb.net/artwork/large/kyurem-white.jpg",
+            "Kyurem Black": "https://img.pokemondb.net/artwork/large/kyurem-black.jpg",
+            "Palkia Origin Forme": "https://img.pokemondb.net/artwork/large/palkia-origin.jpg",
+            "Lunala": "https://img.pokemondb.net/artwork/large/lunala.jpg",
+            "Solgaleo": "https://img.pokemondb.net/artwork/large/solgaleo.jpg",
+            "Mega Swampert": "https://img.pokemondb.net/artwork/large/swampert-mega.jpg",
+            "Magearna": "https://img.pokemondb.net/artwork/large/magearna.jpg",
+            "Giratina Origin Forme": "https://img.pokemondb.net/artwork/large/giratina-origin.jpg",
+            "Mega Gardevoir": "https://img.pokemondb.net/artwork/large/gardevoir-mega.jpg",
+            "Mega Beedrill": "https://img.pokemondb.net/artwork/large/beedrill-mega.jpg",
+            "Mega Aerodactyl": "https://img.pokemondb.net/artwork/large/aerodactyl-mega.jpg",
+            "Gholdengo": "https://img.pokemondb.net/artwork/large/gholdengo.jpg",
+            "Darkrai": "https://img.pokemondb.net/artwork/large/darkrai.jpg",
+            "Walking Wake": "https://img.pokemondb.net/artwork/large/walking-wake.jpg",
+            "Iron Leaves": "https://img.pokemondb.net/artwork/large/iron-leaves.jpg",
+            "Mega Charizard Y": "https://img.pokemondb.net/artwork/large/charizard-mega-y.jpg",
+            "Mega Charizard X": "https://img.pokemondb.net/artwork/large/charizard-mega-x.jpg",
+            "Pecharunt": "https://img.pokemondb.net/artwork/large/pecharunt.jpg",
+            "Ogrepon-Wellspring": "https://img.pokemondb.net/sprites/scarlet-violet/normal/ogerpon-wellspring.png",
+            "Ogrepon-Hearthflame": "https://img.pokemondb.net/sprites/scarlet-violet/normal/ogerpon-hearthflame.png",
+            "Ogrepon-Cornerstone": "https://img.pokemondb.net/sprites/scarlet-violet/normal/ogerpon-cornerstone.png",
+            "Ash-Greninja": "https://img.pokemondb.net/artwork/large/greninja-ash.jpg",
+            "Zeraora": "https://img.pokemondb.net/artwork/large/zeraora.jpg",
+            "Deoxys Attack Forme": "https://img.pokemondb.net/artwork/large/deoxys-attack.jpg",
+            "Eternatus": "https://img.pokemondb.net/artwork/large/eternatus.jpg",
+            "Slaking": "https://img.pokemondb.net/artwork/large/slaking.jpg",
+            "Palafin Hero Forme": "https://img.pokemondb.net/artwork/large/palafin-hero.jpg",
+        };
+
+    // Game state
+    let playerX = 25, playerY = 25;
+    let collectedPokemon = [];        let currentTeam = [];
+        let playerMoney = 100; // Starting money
+        let collectedCards = []; // Array to track collected cards
+        let trainersDefeated = 0; // Track number of trainers defeated
+        
+        // Card definitions
+        const tradingCards = [
+          {
+            id: 'tulip',
+            name: 'Tulip',
+            trainersRequired: 1,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/7/7/77a9a230ebf4b29bd12a91262a4756bd750f1c26.jpeg',
+            description: 'Card #1 - Defeat 1 trainer to collect'
+          },
+          {
+            id: 'sabrina',
+            name: 'Sabrina', 
+            trainersRequired: 2,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/4/b/4b3b3dca103545f603c0e3d14517129ad0e16dfc.jpeg',
+            description: 'Card #2 - Defeat 2 trainers to collect'
+          },
+          {
+            id: 'rosa',
+            name: 'Rosa',
+            trainersRequired: 3,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/1/9/198103ac1aa2ddcac8aa3a5fb464854f3ab2b14a.jpeg', 
+            description: 'Card #3 - Defeat 3 trainers to collect'
+          },
+          {
+            id: 'oleanna',
+            name: 'Oleanna',
+            trainersRequired: 4,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/f/8/f8a1b1f62b4be6231987e46b86cd8d4bce30c053.jpeg',
+            description: 'Card #4 - Defeat 4 trainers to collect'
+          },
+          {
+            id: 'sonia',
+            name: 'Sonia',
+            trainersRequired: 5,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/f/a/fa2caf2fdbebbe83928535bd7c08ee57846390b3.jpeg',
+            description: 'Card #5 - Defeat 5 trainers to collect'
+          },
+          {
+            id: 'nessa',
+            name: 'Nessa',
+            trainersRequired: 6,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/0/0/00d94ca450ef65aacafd6809719870208c88047d.jpeg',
+            description: 'Card #6 - Defeat 6 trainers to collect'
+          },
+          {
+            id: 'skyla',
+            name: 'Skyla',
+            trainersRequired: 7,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/d/8/d8321e22b92874e17ffbb757b5513e58cb13b332.jpeg',
+            description: 'Card #7 - Defeat 7 trainers to collect'
+          },
+          {
+            id: 'klara',
+            name: 'Klara',
+            trainersRequired: 8,
+            image: 'https://efour.b-cdn.net/uploads/default/original/3X/7/2/7208b84bc8f78fb5618bf5520bc03748f02f8d3a.jpeg',
+            description: 'Card #8 - Defeat 8 trainers to collect'
+          }
+        ];
+    let money = 0;
+    let trainers = [];
+    let inBattle = false;
+    let stepCounter = 0;
+
+    // Audio system variables
+    let youtubePlayer = null;
+    let isPlayerReady = false;
+    let isMusicPlaying = false;
+    
+    // Default YouTube video ID (FarmLifeGaming soundtrack)
+    const defaultMusicVideoId = 'tzb2nGOwXpI'; // You can change this to any YouTube video ID
+
+    // Map generation
+    const mapSize = 50;
+    let gameMap = [];
+
+    function initGame() {
+      generateMap();
+      updateDisplay();
+      setupControls();
+      
+      // Spawn initial trainers after team is ready
+      setTimeout(() => {
+        if (currentTeam.length >= 6) {
+          spawnTrainers();
+        }
+      }, 1000);
+    }
+
+    function generateMap() {
+      const mapGrid = document.getElementById('map-grid');
+      mapGrid.innerHTML = '';
+      
+      for (let y = 0; y < mapSize; y++) {
+        gameMap[y] = [];
+        for (let x = 0; x < mapSize; x++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.id = `tile-${x}-${y}`;
+          
+          // Generate terrain - 60% grass, 20% trees, 15% paths, 5% water
+          let terrain = 'grass';
+          const rand = Math.random();
+          if (rand < 0.05) terrain = 'water';
+          else if (rand < 0.2) terrain = 'path';
+          else if (rand < 0.4) terrain = 'tree';
+          
+          tile.classList.add(terrain);
+          gameMap[y][x] = terrain;
+          
+          // Player starting position
+          if (x === playerX && y === playerY) {
+            tile.classList.add('player');
+          }
+          
+          mapGrid.appendChild(tile);
+        }
+      }
+    }
+
+    function movePlayer(dx, dy) {
+      if (inBattle) return;
+      
+      const newX = playerX + dx;
+      const newY = playerY + dy;
+      
+      // Check boundaries
+      if (newX < 0 || newX >= mapSize || newY < 0 || newY >= mapSize) return;
+      
+      // Check if tile is passable (can't walk on water)
+      if (gameMap[newY][newX] === 'water') return;
+      
+      // Remove player from old position
+      const oldTile = document.getElementById(`tile-${playerX}-${playerY}`);
+      oldTile.classList.remove('player');
+      
+      // Move player
+      playerX = newX;
+      playerY = newY;
+      
+      // Add player to new position
+      const newTile = document.getElementById(`tile-${playerX}-${playerY}`);
+      newTile.classList.add('player');
+      
+      // Increment step counter
+      stepCounter++;
+      
+      updateDisplay();
+      
+      // Check for Pokemon encounter on grass
+      if (gameMap[playerY][playerX] === 'grass' && Math.random() < 0.33) {
+        findPokemon();
+      }
+      
+      // Check for trainer battle
+      checkTrainerEncounter();
+      
+      // Spawn new trainer every 25 steps if player has 6+ Pokemon
+      if (collectedPokemon.length >= 6 && stepCounter % 25 === 0) {
+        spawnRandomTrainer();
+      }
+    }
+
+    function findPokemon() {
+      const allPokemon = Object.keys(pokemonStats);
+      const uncaughtPokemon = allPokemon.filter(name => !collectedPokemon.includes(name));
+      
+      if (uncaughtPokemon.length === 0) {
+        updateStatus("You've caught all Pokemon!");
+        return;
+      }
+      
+      const foundPokemon = uncaughtPokemon[Math.floor(Math.random() * uncaughtPokemon.length)];
+      collectedPokemon.push(foundPokemon);
+      
+      updateStatus(`Found ${foundPokemon}!`);
+      
+      // Auto-add to team if less than 6
+      if (currentTeam.length < 6) {
+        currentTeam.push({
+          name: foundPokemon,
+          hp: pokemonStats[foundPokemon][0],
+          maxHp: pokemonStats[foundPokemon][0],
+          fainted: false
+        });
+        updateStatus(`${foundPokemon} added to your team!`);
+        
+        // Show auto-select button if team is full
+        if (currentTeam.length === 6) {
+          document.getElementById('auto-team-btn').style.display = 'none';
+          spawnTrainers();
+        }
+      }
+      
+      updateDisplay();
+    }
+
+    function spawnTrainers() {
+      if (currentTeam.length < 6) return;
+      
+      // Spawn 3 trainers randomly on the map
+      for (let i = 0; i < 3; i++) {
+        let x, y;
+        do {
+          x = Math.floor(Math.random() * mapSize);
+          y = Math.floor(Math.random() * mapSize);
+        } while (
+          gameMap[y][x] === 'water' || 
+          (x === playerX && y === playerY) ||
+          trainers.some(t => t.x === x && t.y === y)
+        );
+        
+        trainers.push({ x, y, defeated: false });
+        
+        const tile = document.getElementById(`tile-${x}-${y}`);
+        tile.classList.add('trainer');
+      }
+      
+      updateStatus("Trainers have appeared! Walk up to them and press Enter to battle!");
+    }
+
+    function spawnRandomTrainer() {
+      // Find a valid spawn location
+      let x, y;
+      let attempts = 0;
+      do {
+        x = Math.floor(Math.random() * mapSize);
+        y = Math.floor(Math.random() * mapSize);
+        attempts++;
+        if (attempts > 100) return; // Prevent infinite loop if map is full
+      } while (
+        gameMap[y][x] === 'water' || 
+        (x === playerX && y === playerY) ||
+        trainers.some(t => t.x === x && t.y === y && !t.defeated)
+      );
+      
+      trainers.push({ x, y, defeated: false });
+      
+      const tile = document.getElementById(`tile-${x}-${y}`);
+      tile.classList.add('trainer');
+      
+      updateStatus(`A new trainer has appeared after ${stepCounter} steps!`);
+    }
+
+    function checkTrainerEncounter() {
+      const trainer = trainers.find(t => t.x === playerX && t.y === playerY && !t.defeated);
+      if (trainer) {
+        startTrainerBattle(trainer);
+      }
+    }
+
+    function startTrainerBattle(trainer) {
+      inBattle = true;
+      
+      // Generate AI team
+      const allPokemon = Object.keys(pokemonStats);
+      const aiTeam = [];
+      for (let i = 0; i < 6; i++) {
+        const randomPokemon = allPokemon[Math.floor(Math.random() * allPokemon.length)];
+        aiTeam.push({
+          name: randomPokemon,
+          hp: pokemonStats[randomPokemon][0],
+          maxHp: pokemonStats[randomPokemon][0],
+          fainted: false
+        });
+      }
+      
+      // Reset player team HP
+      currentTeam.forEach(pokemon => {
+        pokemon.hp = pokemon.maxHp;
+        pokemon.fainted = false;
+      });
+      
+      openBattleModal(trainer, aiTeam);
+    }
+
+    function openBattleModal(trainer, aiTeam) {
+      const modal = document.getElementById('battle-modal');
+      const content = document.getElementById('battle-content');
+      
+      content.innerHTML = `
+        <div class="battle-info">
+          <div class="battle-pokemon">
+            <h3>Your Team</h3>
+            <div id="player-team-status"></div>
+          </div>
+          <div class="battle-pokemon">
+            <h3>Trainer's Team</h3>
+            <div id="ai-team-status"></div>
+          </div>
+        </div>
+        
+        <div class="battle-log" id="battle-log"></div>
+        
+        <div id="battle-phase">
+          <h3>Select your Pokemon for battle:</h3>
+          <div class="battle-selection" id="pokemon-selection"></div>
+          <button class="button" onclick="confirmSelection()" id="confirm-btn" disabled>Confirm Selection</button>
+          <button class="button danger" onclick="closeBattle()">Flee Battle</button>
+        </div>
+      `;
+      
+      modal.style.display = 'flex';
+      
+      // Start battle system
+      startBattleSystem(trainer, aiTeam);
+    }
+
+    let battleState = {
+      trainer: null,
+      aiTeam: [],
+      playerSelection: null,
+      aiSelection: null,
+      round: 1,
+      selectedMove: null,
+      currentPlayerPokemon: null,
+      currentAiPokemon: null,
+      awaitingPlayerMove: false
+    };
+
+    function startBattleSystem(trainer, aiTeam) {
+      battleState.trainer = trainer;
+      battleState.aiTeam = aiTeam;
+      battleState.round = 1;
+      
+      updateBattleDisplay();
+      showPokemonSelection();
+      logBattle("Trainer wants to battle!");
+      logBattle("Choose your Pokemon for round 1!");
+    }
+
+    function showPokemonSelection() {
+      const selection = document.getElementById('pokemon-selection');
+      selection.innerHTML = '';
+      
+      currentTeam.forEach((pokemon, index) => {
+        if (!pokemon.fainted) {
+          const card = document.createElement('div');
+          card.className = 'battle-pokemon-card';
+          card.onclick = () => selectPokemon(index);
+          card.innerHTML = `
+            <strong>${pokemon.name}</strong><br>
+            <small>HP: ${pokemon.hp}/${pokemon.maxHp}</small>
+            <div class="hp-bar">
+              <div class="hp-fill" style="width: ${(pokemon.hp/pokemon.maxHp)*100}%"></div>
+            </div>
+          `;
+          selection.appendChild(card);
+        }
+      });
+    }
+
+    function selectPokemon(index) {
+      battleState.playerSelection = index;
+      
+      // Update selection display
+      document.querySelectorAll('.battle-pokemon-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      const cards = document.querySelectorAll('.battle-pokemon-card');
+      if (cards[index]) {
+        cards[index].classList.add('selected');
+      }
+      
+      document.getElementById('confirm-btn').disabled = false;
+    }
+
+    function confirmSelection() {
+      if (battleState.playerSelection === null) return;
+      
+      // AI selects random living Pokemon
+      const alivePokemon = battleState.aiTeam.filter(p => !p.fainted);
+      if (alivePokemon.length === 0) {
+        endBattle(true);
+        return;
+      }
+      
+      const aiChoice = battleState.aiTeam.findIndex(p => !p.fainted && p === alivePokemon[Math.floor(Math.random() * alivePokemon.length)]);
+      battleState.aiSelection = aiChoice;
+      
+      // Start individual battle
+      startIndividualBattle();
+    }
+
+    function startIndividualBattle() {
+      const playerPokemon = currentTeam[battleState.playerSelection];
+      const aiPokemon = battleState.aiTeam[battleState.aiSelection];
+      
+      logBattle(`Round ${battleState.round}: ${playerPokemon.name} vs ${aiPokemon.name}!`);
+      
+      // Set current Pokemon for 1v1 battle
+      battleState.currentPlayerPokemon = playerPokemon;
+      battleState.currentAiPokemon = aiPokemon;
+      
+      // Show current battle info
+      showCurrentBattleInfo();
+      
+      // Start the 1v1 battle with move selection
+      start1v1Battle(playerPokemon, aiPokemon);
+    }
+
+    function showCurrentBattleInfo() {
+      const battlePhase = document.getElementById('battle-phase');
+      battlePhase.innerHTML = `
+        <div class="battle-pokemon-info">
+          <div class="current-battle-pokemon">
+            <img src="${pokemonImages[battleState.currentPlayerPokemon.name]}" alt="${battleState.currentPlayerPokemon.name}" 
+                 style="width: 120px; height: 120px; object-fit: contain; border-radius: 8px; margin-bottom: 10px;">
+            <h3>${battleState.currentPlayerPokemon.name}</h3>
+            <div>HP: ${battleState.currentPlayerPokemon.hp}/${battleState.currentPlayerPokemon.maxHp}</div>
+            <div class="hp-bar">
+              <div class="hp-fill" style="width: ${(battleState.currentPlayerPokemon.hp/battleState.currentPlayerPokemon.maxHp)*100}%"></div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; font-size: 24px; font-weight: bold;">VS</div>
+          <div class="current-battle-pokemon">
+            <img src="${pokemonImages[battleState.currentAiPokemon.name]}" alt="${battleState.currentAiPokemon.name}" 
+                 style="width: 120px; height: 120px; object-fit: contain; border-radius: 8px; margin-bottom: 10px;">
+            <h3>${battleState.currentAiPokemon.name}</h3>
+            <div>HP: ${battleState.currentAiPokemon.hp}/${battleState.currentAiPokemon.maxHp}</div>
+            <div class="hp-bar">
+              <div class="hp-fill" style="width: ${(battleState.currentAiPokemon.hp/battleState.currentAiPokemon.maxHp)*100}%"></div>
+            </div>
+          </div>
+        </div>
+        <div id="move-selection-area"></div>
+        <button class="button danger" onclick="closeBattle()">Flee Battle</button>
+      `;
+    }
+
+    function start1v1Battle(playerPokemon, aiPokemon) {
+      if (playerPokemon.hp <= 0 || aiPokemon.hp <= 0) {
+        end1v1Battle();
+        return;
+      }
+      
+      // Show move selection for player
+      showMoveSelection(playerPokemon, aiPokemon);
+    }
+
+    function showMoveSelection(playerPokemon, aiPokemon) {
+      const moveArea = document.getElementById('move-selection-area');
+      
+      const playerMoves = pokemonMoves[playerPokemon.name] || ['Tackle'];
+      
+      moveArea.innerHTML = `
+        <h3>Choose ${playerPokemon.name}'s move:</h3>
+        <div class="move-selection" id="move-selection">
+          ${playerMoves.map((moveName, index) => {
+            const move = moves[moveName];
+            if (!move) return ''; // Skip invalid moves
+            
+            const effectiveness = calculateTypeEffectiveness(move.type, pokemonTypes[aiPokemon.name]);
+            const effText = getEffectivenessText(effectiveness);
+            
+            return `
+              <div class="move-button" onclick="selectMove('${moveName}', ${index})">
+                <div class="move-name">${moveName}</div>
+                <div class="move-details">
+                  ${move.type} | ${move.basePower} BP | ${move.accuracy}% Acc
+                  <br><span class="effectiveness ${effText.class}">${effText.text}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        <button class="button" onclick="executeTurn()" id="execute-move-btn" disabled>Use Move</button>
+      `;
+      
+      battleState.selectedMove = null;
+      battleState.awaitingPlayerMove = true;
+    }
+
+    function calculateTypeEffectiveness(moveType, defenderTypes) {
+      let effectiveness = 1;
+      for (const defenderType of defenderTypes) {
+        const typeMatchup = typeChart[moveType]?.[defenderType];
+        if (typeMatchup !== undefined) {
+          effectiveness *= typeMatchup;
+        }
+        // If any type matchup results in 0 (immunity), the total effectiveness is 0
+        if (effectiveness === 0) {
+          break;
+        }
+      }
+      return effectiveness;
+    }
+
+    function getEffectivenessText(effectiveness) {
+      if (effectiveness === 0) return { text: "No Effect", class: "no-effect" };
+      if (effectiveness > 1) return { text: "Super Effective!", class: "super-effective" };
+      if (effectiveness < 1) return { text: "Not Very Effective", class: "not-very-effective" };
+      return { text: "", class: "" };
+    }
+
+    function selectMove(moveName, index) {
+      console.log(`Selecting move: ${moveName} at index ${index}`);
+      battleState.selectedMove = moveName;
+      
+      // Update UI selection
+      document.querySelectorAll('.move-button').forEach(btn => btn.classList.remove('selected'));
+      const buttons = document.querySelectorAll('.move-button');
+      if (buttons[index]) {
+        buttons[index].classList.add('selected');
+        console.log(`Move button ${index} selected successfully`);
+      } else {
+        console.log(`Error: Move button ${index} not found`);
+      }
+      
+      const executeBtn = document.getElementById('execute-move-btn');
+      if (executeBtn) {
+        executeBtn.disabled = false;
+        console.log(`Execute button enabled`);
+      } else {
+        console.log(`Error: Execute button not found`);
+      }
+      
+      logBattle(`Selected move: ${moveName}`);
+    }
+
+    function executeTurn() {
+      console.log(`ExecuteTurn called - selectedMove: ${battleState.selectedMove}, awaitingPlayerMove: ${battleState.awaitingPlayerMove}`);
+      
+      if (!battleState.selectedMove || !battleState.awaitingPlayerMove) {
+        console.log(`ExecuteTurn blocked - missing move or not awaiting`);
+        logBattle(`Error: Cannot execute turn - selectedMove: ${battleState.selectedMove}, awaitingPlayerMove: ${battleState.awaitingPlayerMove}`);
+        return;
+      }
+      
+      const playerPokemon = battleState.currentPlayerPokemon;
+      const aiPokemon = battleState.currentAiPokemon;
+      
+      console.log(`Player Pokemon: ${playerPokemon?.name}, AI Pokemon: ${aiPokemon?.name}`);
+      
+      battleState.awaitingPlayerMove = false;
+      
+      // AI selects best move using pokebattler logic
+      const aiMove = selectBestAIMove(aiPokemon.name, playerPokemon.name);
+      
+      // Determine speed order
+      const playerSpeed = pokemonStats[playerPokemon.name][5];
+      const aiSpeed = pokemonStats[aiPokemon.name][5];
+      const playerFirst = playerSpeed > aiSpeed || (playerSpeed === aiSpeed && Math.random() < 0.5);
+      
+      logBattle(`Speed check: ${playerPokemon.name} (${playerSpeed}) vs ${aiPokemon.name} (${aiSpeed}) - ${playerFirst ? 'Player' : 'AI'} goes first!`);
+      
+      // Execute the turn
+      executeBattleTurn(playerPokemon, aiPokemon, battleState.selectedMove, aiMove, playerFirst);
+    }
+
+    function selectBestAIMove(attackerName, defenderName) {
+      const availableMoves = pokemonMoves[attackerName] || ['Tackle'];
+      let bestMove = availableMoves[0];
+      let bestScore = 0;
+      
+      availableMoves.forEach(moveName => {
+        const move = moves[moveName];
+        if (!move) return;
+        
+        const stab = pokemonTypes[attackerName].includes(move.type) ? 1.5 : 1;
+        const eff = pokemonTypes[defenderName].reduce((m, t) => m * (typeChart[move.type]?.[t] || 1), 1);
+        
+        // Calculate expected damage score (base power * STAB * effectiveness * accuracy)
+        const score = move.basePower * stab * eff * (move.accuracy / 100);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = moveName;
+        }
+      });
+      
+      return bestMove;
+    }
+
+    function executeBattleTurn(playerPokemon, aiPokemon, playerMove, aiMove, playerFirst) {
+      // Hide move selection during attack execution
+      document.getElementById('move-selection-area').innerHTML = '<div style="padding: 20px; text-align: center;">Executing moves...</div>';
+      
+      logBattle(`AI selected move: ${aiMove}`);
+      logBattle(`Player selected move: ${playerMove}`);
+      
+      if (playerFirst) {
+        // Player attacks first
+        logBattle(`${playerPokemon.name} attacks first!`);
+        aiPokemon.hp = doAttack(playerPokemon.name, aiPokemon.name, aiPokemon.hp, playerMove);
+        showCurrentBattleInfo();
+        updateBattleDisplay();
+        
+        if (aiPokemon.hp <= 0) {
+          aiPokemon.fainted = true;
+          logBattle(`${aiPokemon.name} fainted!`);
+          // Heal player Pokemon to full HP for scoring a KO
+          playerPokemon.hp = playerPokemon.maxHp;
+          logBattle(`${playerPokemon.name} restored to full health for scoring a KO!`);
+          setTimeout(() => end1v1Battle(), 1500);
+          return;
+        }
+        
+        // AI counter-attacks
+        setTimeout(() => {
+          logBattle(`${aiPokemon.name} counter-attacks!`);
+          playerPokemon.hp = doAttack(aiPokemon.name, playerPokemon.name, playerPokemon.hp, aiMove);
+          showCurrentBattleInfo();
+          updateBattleDisplay();
+          
+          if (playerPokemon.hp <= 0) {
+            playerPokemon.fainted = true;
+            logBattle(`${playerPokemon.name} fainted!`);
+            // Heal AI Pokemon to full HP for scoring a KO
+            aiPokemon.hp = aiPokemon.maxHp;
+            logBattle(`${aiPokemon.name} restored to full health for scoring a KO!`);
+            setTimeout(() => end1v1Battle(), 1500);
+          } else {
+            // Continue battle - show move selection again
+            setTimeout(() => start1v1Battle(playerPokemon, aiPokemon), 1000);
+          }
+        }, 1000);
+        
+      } else {
+        // AI attacks first
+        logBattle(`${aiPokemon.name} attacks first!`);
+        playerPokemon.hp = doAttack(aiPokemon.name, playerPokemon.name, playerPokemon.hp, aiMove);
+        showCurrentBattleInfo();
+        updateBattleDisplay();
+        
+        if (playerPokemon.hp <= 0) {
+          playerPokemon.fainted = true;
+          logBattle(`${playerPokemon.name} fainted!`);
+          // Heal AI Pokemon to full HP for scoring a KO
+          aiPokemon.hp = aiPokemon.maxHp;
+          logBattle(`${aiPokemon.name} restored to full health for scoring a KO!`);
+          setTimeout(() => end1v1Battle(), 1500);
+          return;
+        }
+        
+        // Player counter-attacks
+        setTimeout(() => {
+          logBattle(`${playerPokemon.name} counter-attacks!`);
+          aiPokemon.hp = doAttack(playerPokemon.name, aiPokemon.name, aiPokemon.hp, playerMove);
+          showCurrentBattleInfo();
+          updateBattleDisplay();
+          
+          if (aiPokemon.hp <= 0) {
+            aiPokemon.fainted = true;
+            logBattle(`${aiPokemon.name} fainted!`);
+            // Heal player Pokemon to full HP for scoring a KO
+            playerPokemon.hp = playerPokemon.maxHp;
+            logBattle(`${playerPokemon.name} restored to full health for scoring a KO!`);
+            setTimeout(() => end1v1Battle(), 1500);
+          } else {
+            // Continue battle - show move selection again
+            setTimeout(() => start1v1Battle(playerPokemon, aiPokemon), 1000);
+          }
+        }, 1000);
+      }
+    }
+
+    function selectBestAIMove(attacker, defender) {
+      const availableMoves = pokemonMoves[attacker];
+      let bestMove = availableMoves[0];
+      let bestScore = -1;
+      
+      for (const moveName of availableMoves) {
+        const move = moves[moveName];
+        if (!move) continue;
+        
+        // Calculate type effectiveness
+        const effectiveness = calculateTypeEffectiveness(move.type, pokemonTypes[defender]);
+        
+        // Skip moves with no effect (0 damage)
+        if (effectiveness === 0) continue;
+        
+        // Calculate STAB (Same Type Attack Bonus)
+        const stab = pokemonTypes[attacker].includes(move.type) ? 1.5 : 1;
+        
+        // Calculate move score: base power * effectiveness * STAB * accuracy
+        const score = move.basePower * effectiveness * stab * (move.accuracy / 100);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = moveName;
+        }
+      }
+      
+      // If all moves have no effect, fall back to random selection
+      if (bestScore === -1) {
+        return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+      }
+      
+      return bestMove;
+    }
+
+    // Use pokebattler's exact doAttack function
+    function doAttack(attacker, defender, defHP, forcedMove) {
+      const moveName = forcedMove || selectBestAIMove(attacker, defender);
+      const mv = moves[moveName];
+      
+      if (!mv) {
+        logBattle(`${attacker} tried to use ${moveName} but the move failed!`);
+        return defHP;
+      }
+
+      // Special handling for Triple Axel
+      if (moveName === "Triple Axel") {
+        return handleTripleAxel(attacker, defender, defHP, mv);
+      }
+
+      if (Math.random() * 100 > mv.accuracy) { 
+        logBattle(`${attacker}'s ${moveName} missed!`);
+        return defHP; 
+      }
+
+      const isPhysical = physicalMoves.has(moveName);
+      const atk = isPhysical ? pokemonStats[attacker][1] : pokemonStats[attacker][3];
+      const def = isPhysical ? pokemonStats[defender][2] : pokemonStats[defender][4];
+
+      const stab = pokemonTypes[attacker].includes(mv.type) ? 1.5 : 1;
+      const eff = calculateTypeEffectiveness(mv.type, pokemonTypes[defender]);
+      const rand = Math.random() * 0.15 + 0.85;
+      let dmg = Math.floor(((((2 * 100 / 5 + 2) * mv.basePower * (atk / def)) / 50) + 2) * stab * eff * rand);
+      
+      if (eff > 0 && dmg < 1) dmg = 1; 
+      if (eff === 0) dmg = 0;
+
+      defHP -= dmg;
+      
+      let effectivenessMessage = "";
+      if (eff > 1) effectivenessMessage = " It's super effective!";
+      else if (eff < 1 && eff > 0) effectivenessMessage = " It's not very effective...";
+      else if (eff === 0) effectivenessMessage = " It has no effect!";
+      
+      logBattle(`${attacker} used ${moveName}! It dealt ${dmg} damage.${effectivenessMessage}`);
+      return Math.max(0, defHP);
+    }
+
+    function handleTripleAxel(attacker, defender, defHP, mv) {
+      logBattle(`${attacker} used Triple Axel!`);
+      
+      const isPhysical = physicalMoves.has("Triple Axel");
+      const atk = isPhysical ? pokemonStats[attacker][1] : pokemonStats[attacker][3];
+      const def = isPhysical ? pokemonStats[defender][2] : pokemonStats[defender][4];
+      
+      const stab = pokemonTypes[attacker].includes(mv.type) ? 1.5 : 1;
+      const eff = calculateTypeEffectiveness(mv.type, pokemonTypes[defender]);
+      
+      if (eff === 0) {
+        logBattle("It has no effect!");
+        return defHP;
+      }
+      
+      let totalDamage = 0;
+      let hitCount = 0;
+      const basePowers = [20, 60, 120]; // Power for each hit
+      
+      for (let hit = 1; hit <= 3; hit++) {
+        // Calculate accuracy for this hit: 0.9^hit
+        const hitAccuracy = Math.pow(0.9, hit) * 100;
+        
+        if (Math.random() * 100 <= hitAccuracy) {
+          hitCount++;
+          const rand = Math.random() * 0.15 + 0.85;
+          let dmg = Math.floor(((((2 * 100 / 5 + 2) * basePowers[hit - 1] * (atk / def)) / 50) + 2) * stab * eff * rand);
+          
+          if (eff > 0 && dmg < 1) dmg = 1;
+          
+          totalDamage += dmg;
+          logBattle(`Hit ${hit}! Dealt ${dmg} damage.`);
+        } else {
+          logBattle(`Hit ${hit} missed!`);
+          break; // If a hit misses, subsequent hits don't occur
+        }
+      }
+      
+      if (hitCount > 0) {
+        let effectivenessMessage = "";
+        if (eff > 1) effectivenessMessage = " It's super effective!";
+        else if (eff < 1 && eff > 0) effectivenessMessage = " It's not very effective...";
+        
+        logBattle(`Triple Axel hit ${hitCount} time(s) for ${totalDamage} total damage!${effectivenessMessage}`);
+        defHP -= totalDamage;
+      } else {
+        logBattle("Triple Axel missed completely!");
+      }
+      
+      return Math.max(0, defHP);
+    }
+
+    function end1v1Battle() {
+      // Check if overall battle should continue
+      setTimeout(() => checkBattleEnd(), 1000);
+    }
+
+    function checkBattleEnd() {
+      const playerAlive = currentTeam.some(p => !p.fainted);
+      const aiAlive = battleState.aiTeam.some(p => !p.fainted);
+      
+      if (!playerAlive) {
+        endBattle(false);
+      } else if (!aiAlive) {
+        endBattle(true);
+      } else {
+        // Continue to next round
+        battleState.round++;
+        battleState.playerSelection = null;
+        battleState.aiSelection = null;
+        battleState.selectedMove = null;
+        battleState.currentPlayerPokemon = null;
+        battleState.currentAiPokemon = null;
+        battleState.awaitingPlayerMove = false;
+        
+        updateBattleDisplay();
+        
+        setTimeout(() => {
+          const battlePhase = document.getElementById('battle-phase');
+          battlePhase.innerHTML = `
+            <h3>Round ${battleState.round}! Choose your next Pokemon:</h3>
+            <div class="battle-selection" id="pokemon-selection"></div>
+            <button class="button" onclick="confirmSelection()" id="confirm-btn" disabled>Confirm Selection</button>
+            <button class="button danger" onclick="closeBattle()">Flee Battle</button>
+          `;
+          showPokemonSelection();
+          logBattle(`Round ${battleState.round}! Choose your next Pokemon!`);
+        }, 2000);
+      }
+    }
+
+    function endBattle(playerWon) {
+      if (playerWon) {
+        playerMoney += 100;
+        trainersDefeated++;
+        logBattle(`You won! Gained $100! (Trainers defeated: ${trainersDefeated})`);
+        battleState.trainer.defeated = true;
+        
+        // Check for new cards
+        checkForNewCards();
+        
+        // Remove trainer from map
+        const tile = document.getElementById(`tile-${battleState.trainer.x}-${battleState.trainer.y}`);
+        tile.classList.remove('trainer');
+      } else {
+        logBattle("You lost the battle!");
+      }
+      
+      setTimeout(() => {
+        closeBattle();
+      }, 3000);
+    }
+
+    function closeBattle() {
+      document.getElementById('battle-modal').style.display = 'none';
+      inBattle = false;
+      updateDisplay();
+    }
+
+    function updateBattleDisplay() {
+      const playerStatus = document.getElementById('player-team-status');
+      const aiStatus = document.getElementById('ai-team-status');
+      
+      if (playerStatus) {
+        playerStatus.innerHTML = currentTeam.map(p => `
+          <div style="margin: 5px 0; padding: 5px; background: ${p.fainted ? '#666' : '#444'}; border-radius: 3px;">
+            ${p.name}: ${p.fainted ? 'Fainted' : `${p.hp}/${p.maxHp} HP`}
+          </div>
+        `).join('');
+      }
+      
+      if (aiStatus) {
+        aiStatus.innerHTML = battleState.aiTeam.map(p => `
+          <div style="margin: 5px 0; padding: 5px; background: ${p.fainted ? '#666' : '#444'}; border-radius: 3px;">
+            ${p.name}: ${p.fainted ? 'Fainted' : `${p.hp}/${p.maxHp} HP`}
+          </div>
+        `).join('');
+      }
+    }
+
+    function logBattle(message) {
+      const log = document.getElementById('battle-log');
+      if (log) {
+        log.innerHTML += `<div style="margin: 2px 0;">${message}</div>`;
+        log.scrollTop = log.scrollHeight;
+      }
+    }
+
+    function updateDisplay() {
+      document.getElementById('collection-count').textContent = collectedPokemon.length;
+      document.getElementById('money').textContent = playerMoney;
+      document.getElementById('player-x').textContent = playerX;
+      document.getElementById('player-y').textContent = playerY;
+      document.getElementById('step-count').textContent = stepCounter;
+      
+      // Update team display
+      const teamDisplay = document.getElementById('team-display');
+      if (currentTeam.length === 0) {
+        teamDisplay.textContent = 'No Pokemon in team';
+      } else {
+        // Create a 3x2 grid for up to 6 team members
+        const teamSlots = [];
+        for (let i = 0; i < 6; i++) {
+          const pokemon = currentTeam[i];
+          if (pokemon) {
+            const hpPercentage = (pokemon.hp / pokemon.maxHp) * 100;
+            let hpBarClass = 'high';
+            if (hpPercentage <= 25) hpBarClass = 'low';
+            else if (hpPercentage <= 50) hpBarClass = 'medium';
+            
+            const pokemonImage = pokemonImages[pokemon.name] || 'https://via.placeholder.com/50x50?text=?';
+            
+            teamSlots.push(`
+              <div class="team-pokemon">
+                <div class="team-pokemon-image" style="background-image: url('${pokemonImage}')"></div>
+                <div class="team-pokemon-name">${pokemon.name}</div>
+                <div class="hp-bar-container">
+                  <div class="hp-bar ${hpBarClass}" style="width: ${hpPercentage}%"></div>
+                </div>
+                <div class="hp-text">${pokemon.hp}/${pokemon.maxHp}</div>
+              </div>
+            `);
+          } else {
+            // Empty slot
+            teamSlots.push(`
+              <div class="team-pokemon" style="opacity: 0.3;">
+                <div class="team-pokemon-image" style="background: #333;"></div>
+                <div class="team-pokemon-name">Empty</div>
+                <div class="hp-bar-container">
+                  <div class="hp-bar" style="width: 0%"></div>
+                </div>
+                <div class="hp-text">-/-</div>
+              </div>
+            `);
+          }
+        }
+        
+        teamDisplay.innerHTML = `<div class="team-grid">${teamSlots.join('')}</div>`;
+      }
+      
+      // Show auto-select team button if needed
+      if (collectedPokemon.length >= 6 && currentTeam.length < 6) {
+        document.getElementById('auto-team-btn').style.display = 'inline-block';
+      }
+    }
+
+    function updateStatus(message) {
+      document.getElementById('game-status').textContent = message;
+      setTimeout(() => {
+        document.getElementById('game-status').textContent = 'Walk on grass to find Pokemon!';
+      }, 3000);
+    }
+
+    function autoSelectTeam() {
+      currentTeam = [];
+      for (let i = 0; i < Math.min(6, collectedPokemon.length); i++) {
+        const pokemonName = collectedPokemon[i];
+        currentTeam.push({
+          name: pokemonName,
+          hp: pokemonStats[pokemonName][0],
+          maxHp: pokemonStats[pokemonName][0],
+          fainted: false
+        });
+      }
+      
+      document.getElementById('auto-team-btn').style.display = 'none';
+      updateDisplay();
+      updateStatus("Team auto-selected!");
+      
+      if (currentTeam.length === 6) {
+        spawnTrainers();
+      }
+    }
+
+    function openBag() {
+      const modal = document.getElementById('bag-modal');
+      const cardsContainer = document.getElementById('pokemon-cards');
+      
+      // Reset to pokemon tab
+      document.querySelectorAll('#bag-modal .shop-tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector('#bag-modal .shop-tab').classList.add('active');
+      document.getElementById('pokemon-collection').style.display = 'block';
+      document.getElementById('card-binder').style.display = 'none';
+      
+      cardsContainer.innerHTML = '';
+      
+      collectedPokemon.forEach(pokemonName => {
+        const card = createPokemonCard(pokemonName);
+        cardsContainer.appendChild(card);
+      });
+      
+      modal.style.display = 'flex';
+    }
+
+    function closeBag() {
+      document.getElementById('bag-modal').style.display = 'none';
+    }
+
+    function createPokemonCard(pokemonName) {
+      const stats = pokemonStats[pokemonName];
+      const types = pokemonTypes[pokemonName] || ['Normal'];
+      const pokemonMovesData = pokemonMoves[pokemonName] || ['Tackle', 'Quick Attack', 'Growl', 'Leer'];
+      
+      const card = document.createElement('div');
+      card.className = 'pokemon-card';
+      
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="pokemon-name">${pokemonName}</div>
+          <div class="pokemon-types">
+            ${types.map(type => `<span class="type-badge type-${type.toLowerCase()}">${type}</span>`).join('')}
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-label">HP</div>
+            <div class="stat-value">${stats[0]}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Attack</div>
+            <div class="stat-value">${stats[1]}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Defense</div>
+            <div class="stat-value">${stats[2]}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Sp. Atk</div>
+            <div class="stat-value">${stats[3]}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Sp. Def</div>
+            <div class="stat-value">${stats[4]}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Speed</div>
+            <div class="stat-value">${stats[5]}</div>
+          </div>
+        </div>
+        
+        <div class="moves-section">
+          <strong>Moves:</strong>
+          <div class="moves-grid">
+            ${pokemonMovesData.map(move => `<div class="move">${move}</div>`).join('')}
+          </div>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: center;">
+          <button class="button danger" onclick="removePokemon('${pokemonName}')" style="padding: 8px 12px; font-size: 12px;">
+            Remove from Team
+          </button>
+        </div>
+      `;
+      
+      return card;
+    }
+
+    function removePokemon(pokemonName) {
+      // Check if Pokemon is currently in the active team
+      const inTeam = currentTeam.some(pokemon => pokemon.name === pokemonName);
+      
+      if (inTeam) {
+        // If Pokemon is in team, check if we have enough total Pokemon to replace it
+        if (collectedPokemon.length <= 6) {
+          alert(`Cannot remove ${pokemonName} - you need at least 7 total Pokemon to remove team members! (Currently have ${collectedPokemon.length})`);
+          return;
+        }
+        
+        // Additional confirmation for team members
+        if (!confirm(`${pokemonName} is in your active team! A replacement will be automatically added. Are you sure you want to remove it?`)) {
+          return;
+        }
+      }
+      
+      // Confirm removal
+      if (confirm(`Are you sure you want to remove ${pokemonName} from your collection? This cannot be undone.`)) {
+        // Remove from collected Pokemon
+        const index = collectedPokemon.indexOf(pokemonName);
+        if (index > -1) {
+          collectedPokemon.splice(index, 1);
+          
+          // If Pokemon was in team, remove it and add a replacement
+          if (inTeam) {
+            const teamIndex = currentTeam.findIndex(pokemon => pokemon.name === pokemonName);
+            if (teamIndex > -1) {
+              currentTeam.splice(teamIndex, 1);
+              
+              // Find a replacement Pokemon (one not currently in team)
+              const availablePokemon = collectedPokemon.filter(name => 
+                !currentTeam.some(teamMember => teamMember.name === name)
+              );
+              
+              if (availablePokemon.length > 0) {
+                const replacementName = availablePokemon[0];
+                currentTeam.push({
+                  name: replacementName,
+                  hp: pokemonStats[replacementName][0],
+                  maxHp: pokemonStats[replacementName][0],
+                  fainted: false
+                });
+                updateStatus(`${pokemonName} removed! ${replacementName} added to team as replacement.`);
+              }
+            }
+          } else {
+            updateStatus(`${pokemonName} removed from collection!`);
+          }
+          
+          // Update displays
+          updateDisplay();
+          
+          // Refresh the bag view
+          openBag();
+        }
+      }
+    }
+
+    // Card System Functions
+    function checkForNewCards() {
+      const newCards = tradingCards.filter(card => 
+        trainersDefeated >= card.trainersRequired && 
+        !collectedCards.includes(card.id)
+      );
+      
+      newCards.forEach(card => {
+        collectedCards.push(card.id);
+        updateStatus(`🎉 New card unlocked: ${card.name}! 🎉`);
+        
+        // Check for victory
+        if (collectedCards.length === tradingCards.length) {
+          setTimeout(() => {
+            alert('🎉 CONGRATULATIONS! You\'ve collected all 8 trading cards and beat the game! 🎉');
+          }, 1000);
+        }
+      });
+    }
+
+    function showBagTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('#bag-modal .shop-tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // Show/hide sections
+      document.getElementById('pokemon-collection').style.display = tabName === 'pokemon' ? 'block' : 'none';
+      document.getElementById('card-binder').style.display = tabName === 'cards' ? 'block' : 'none';
+      
+      if (tabName === 'cards') {
+        populateCardBinder();
+      }
+    }
+
+    function populateCardBinder() {
+      const cardDisplay = document.getElementById('trading-cards-display');
+      cardDisplay.innerHTML = '';
+      
+      tradingCards.forEach(card => {
+        const isCollected = collectedCards.includes(card.id);
+        const canCollect = trainersDefeated >= card.trainersRequired;
+        
+        const cardElement = document.createElement('div');
+        cardElement.className = `trading-card ${isCollected ? 'collected' : (canCollect ? '' : 'locked')}`;
+        cardElement.style.cursor = 'pointer';
+        cardElement.innerHTML = `
+          <div class="card-image" style="background-image: url('${card.image}')"></div>
+          <div class="card-info">
+            <div class="card-name">${card.name}</div>
+            <div class="card-status">
+              ${isCollected ? '✓ COLLECTED' : 
+                canCollect ? '🔓 AVAILABLE' : 
+                `🔒 Defeat ${card.trainersRequired} trainers`}
+            </div>
+          </div>
+        `;
+        
+        // Add click handler to show card detail
+        cardElement.addEventListener('click', () => {
+          showCardDetail(card, isCollected, canCollect);
+        });
+        
+        cardDisplay.appendChild(cardElement);
+      });
+      
+      // Check if all cards are collected
+      if (collectedCards.length === tradingCards.length) {
+        document.getElementById('card-victory-message').style.display = 'block';
+      }
+    }
+
+    // Card Detail Functions
+    function showCardDetail(card, isCollected, canCollect) {
+      const modal = document.getElementById('card-detail-modal');
+      const content = document.getElementById('card-detail-content');
+      const image = document.getElementById('card-detail-image');
+      const name = document.getElementById('card-detail-name');
+      const status = document.getElementById('card-detail-status');
+      const description = document.getElementById('card-detail-description');
+      
+      // Set the image
+      image.style.backgroundImage = `url('${card.image}')`;
+      
+      // Set the name
+      name.textContent = card.name;
+      
+      // Set the status with the same logic as the small cards
+      if (isCollected) {
+        status.textContent = '✓ COLLECTED';
+        status.style.color = '#4CAF50';
+      } else if (canCollect) {
+        status.textContent = '🔓 AVAILABLE';
+        status.style.color = '#FFA500';
+      } else {
+        status.textContent = `🔒 Defeat ${card.trainersRequired} trainers`;
+        status.style.color = '#999';
+      }
+      
+      // Set the description
+      description.textContent = card.description;
+      
+      // Apply the correct CSS classes to match the small card appearance
+      content.className = `card-detail-content ${isCollected ? 'collected' : (canCollect ? '' : 'locked')}`;
+      
+      // Show the modal
+      modal.style.display = 'flex';
+    }
+
+    function closeCardDetail() {
+      document.getElementById('card-detail-modal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside the content
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('card-detail-modal');
+      if (e.target === modal) {
+        closeCardDetail();
+      }
+    });
+
+    // Shop Functions
+    function openShop() {
+      const modal = document.getElementById('shop-modal');
+      updateMoneyDisplay();
+      populatePokemonShop();
+      modal.style.display = 'flex';
+    }
+
+    function closeShop() {
+      document.getElementById('shop-modal').style.display = 'none';
+    }
+
+    function showShopTab(tabName) {
+      // Only pokemon tab now, so this function is simplified
+      document.getElementById('pokemon-shop').style.display = 'block';
+    }
+
+    function updateMoneyDisplay() {
+      document.getElementById('money-display').textContent = playerMoney;
+      document.getElementById('money').textContent = playerMoney;
+    }
+
+    function populatePokemonShop() {
+      const shopList = document.getElementById('pokemon-shop-list');
+      shopList.innerHTML = '';
+      
+      // Get all pokemon names from pokemonStats
+      const allPokemon = Object.keys(pokemonStats);
+      
+      allPokemon.forEach(pokemonName => {
+        const types = pokemonTypes[pokemonName] || ['Normal'];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="padding: 8px; border: 1px solid #ccc;">${pokemonName}</td>
+          <td style="padding: 8px; border: 1px solid #ccc;">
+            ${types.map(type => `<span class="type-badge type-${type.toLowerCase()}" style="font-size: 12px; padding: 2px 6px;">${type}</span>`).join(' ')}
+          </td>
+          <td style="padding: 8px; border: 1px solid #ccc;">
+            <button class="button" onclick="buyPokemon('${pokemonName}')" ${playerMoney < 100 ? 'disabled' : ''}>
+              Buy ($100)
+            </button>
+          </td>
+        `;
+        shopList.appendChild(row);
+      });
+    }
+
+    function buyPokemon(pokemonName) {
+      if (playerMoney >= 100) {
+        playerMoney -= 100;
+        
+        if (!collectedPokemon.includes(pokemonName)) {
+          collectedPokemon.push(pokemonName);
+        }
+        
+        // Auto-add to team if less than 6
+        if (currentTeam.length < 6) {
+          currentTeam.push({
+            name: pokemonName,
+            hp: pokemonStats[pokemonName][0],
+            maxHp: pokemonStats[pokemonName][0],
+            fainted: false
+          });
+          updateStatus(`${pokemonName} purchased for $100 and added to your team!`);
+          
+          // Show auto-select button if team is full
+          if (currentTeam.length === 6) {
+            document.getElementById('auto-team-btn').style.display = 'none';
+            spawnTrainers();
+          }
+        } else {
+          updateStatus(`${pokemonName} purchased for $100!`);
+        }
+        
+        updateMoneyDisplay();
+        updateDisplay();
+        
+        // Refresh the shop
+        populatePokemonShop();
+      }
+    }
+
+    function setupControls() {
+      document.addEventListener('keydown', (e) => {
+        if (inBattle) {
+          if (e.key === 'Enter') {
+            const confirmBtn = document.getElementById('confirm-btn');
+            if (confirmBtn && !confirmBtn.disabled) {
+              confirmSelection();
+            }
+          }
+          return;
+        }
+        
+        switch(e.key.toLowerCase()) {
+          case 'w':
+          case 'arrowup':
+            e.preventDefault();
+            movePlayer(0, -1);
+            break;
+          case 's':
+          case 'arrowdown':
+            e.preventDefault();
+            movePlayer(0, 1);
+            break;
+          case 'a':
+          case 'arrowleft':
+            e.preventDefault();
+            movePlayer(-1, 0);
+            break;
+          case 'd':
+          case 'arrowright':
+            e.preventDefault();
+            movePlayer(1, 0);
+            break;
+          case 'enter':
+            e.preventDefault();
+            checkTrainerEncounter();
+            break;
+        }
+      });
+    }
+
+    // YouTube Audio System Functions
+    function onYouTubeIframeAPIReady() {
+      youtubePlayer = new YT.Player('youtube-player', {
+        height: '1',
+        width: '1',
+        videoId: defaultMusicVideoId,
+        playerVars: {
+          'autoplay': 0,
+          'controls': 0,
+          'loop': 1,
+          'playlist': defaultMusicVideoId
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+      isPlayerReady = true;
+      youtubePlayer.setVolume(30); // Default volume
+      console.log('YouTube player ready');
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        isMusicPlaying = true;
+        updatePlayButton();
+      } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+        isMusicPlaying = false;
+        updatePlayButton();
+      }
+    }
+
+    function toggleMusic() {
+      if (!isPlayerReady) {
+        console.log('Player not ready yet');
+        return;
+      }
+
+      if (isMusicPlaying) {
+        youtubePlayer.pauseVideo();
+      } else {
+        youtubePlayer.playVideo();
+      }
+    }
+
+    function stopMusic() {
+      if (!isPlayerReady) return;
+      youtubePlayer.stopVideo();
+      isMusicPlaying = false;
+      updatePlayButton();
+    }
+
+    function setVolume(volume) {
+      if (!isPlayerReady) return;
+      youtubePlayer.setVolume(volume);
+    }
+
+    function updatePlayButton() {
+      const button = document.getElementById('play-pause-btn');
+      if (isMusicPlaying) {
+        button.textContent = '🔇 Pause';
+        button.classList.add('paused');
+      } else {
+        button.textContent = '🔊 Play';
+        button.classList.remove('paused');
+      }
+    }
+
+    function toggleAudioControls() {
+      const audioControls = document.getElementById('audio-controls');
+      const minimizeBtn = document.getElementById('minimize-btn');
+      
+      if (audioControls.classList.contains('minimized')) {
+        audioControls.classList.remove('minimized');
+        minimizeBtn.textContent = '−';
+      } else {
+        audioControls.classList.add('minimized');
+        minimizeBtn.textContent = '+';
+      }
+    }
+
+    // Initialize game when page loads
+    window.onload = initGame;
+  </script>
+  
+  <!-- Audio Controls -->
+  <div class="audio-controls" id="audio-controls">
+    <button class="minimize-btn" id="minimize-btn" onclick="toggleAudioControls()">−</button>
+    <div class="audio-content" id="audio-content">
+      <div>
+        <button class="audio-button" id="play-pause-btn" onclick="toggleMusic()">🔊 Play</button>
+        <button class="audio-button" id="stop-btn" onclick="stopMusic()">⏹️ Stop</button>
+      </div>
+      <div class="volume-control">
+        <span style="color: white; font-size: 12px;">Vol:</span>
+        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="30" onchange="setVolume(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden YouTube Player -->
+  <div id="youtube-player"></div>
+
+  <!-- YouTube API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    // Initialize game when page loads
+    window.onload = initGame;
+  </script>
+</body>
+</html>
